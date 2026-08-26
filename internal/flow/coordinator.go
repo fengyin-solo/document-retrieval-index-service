@@ -263,12 +263,20 @@ func (c *Coordinator) MergeSuggestions(ctx context.Context, providers []func(con
 	}
 	wg.Wait()
 	close(responses)
-	first := <-responses
-	if first.err != nil {
-		c.state.SetStatus("suggestions", "failed")
-		return nil, first.err
+	merged := make(map[string]struct{})
+	for r := range responses {
+		if r.err != nil {
+			c.state.SetStatus("suggestions", "failed")
+			return nil, r.err
+		}
+		for _, item := range r.items {
+			merged[item] = struct{}{}
+		}
 	}
-	partial := append([]string(nil), first.items...)
+	partial := make([]string, 0, len(merged))
+	for item := range merged {
+		partial = append(partial, item)
+	}
 	sort.Strings(partial)
 	c.state.PutSnapshot("suggestions", partial)
 	c.state.SetStatus("suggestions", "ready")
