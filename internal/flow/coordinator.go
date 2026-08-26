@@ -438,6 +438,9 @@ func (c *Coordinator) QueueIndex(ctx context.Context, documents []string, consum
 		case <-ctx.Done():
 			close(queue)
 			return ctx.Err()
+		case err := <-errCh:
+			close(queue)
+			return err
 		}
 	}
 	close(queue)
