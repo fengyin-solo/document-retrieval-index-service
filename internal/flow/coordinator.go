@@ -294,9 +294,17 @@ func (c *Coordinator) WaitForWorkers(ctx context.Context, workers *sync.WaitGrou
 		workers.Wait()
 		close(done)
 	}()
-	<-done
-	c.state.SetStatus("workers", "stopped")
-	return nil
+	select {
+	case <-done:
+		// 用 UpdateStatus 推进状态：SetStatus 是先写者胜，
+		// 已写入的 "stopping" 会被后续 SetStatus 忽略，导致状态永远停在 stopping。
+		c.state.UpdateStatus("workers", "stopped")
+		return nil
+	case <-ctx.Done():
+		// 到期限仍未收尾，按超时返回并写成 timeout。
+		c.state.UpdateStatus("workers", "timeout")
+		return ctx.Err()
+	}
 }
 
 func (c *Coordinator) QueryShards(ctx context.Context, shards []string, fetch func(context.Context, string) (string, error)) ([]string, error) {

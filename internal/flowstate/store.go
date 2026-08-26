@@ -118,6 +118,15 @@ func (s *Store) SetStatus(key, status string) {
 	s.statuses[key] = status
 }
 
+// UpdateStatus 无条件写入状态，覆盖已有值。
+// SetStatus 是“先写者胜”，无法表达状态流转（如 stopping -> stopped / timeout），
+// 需要推进状态时改用本方法。
+func (s *Store) UpdateStatus(key, status string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.statuses[key] = status
+}
+
 func (s *Store) Status(key string) string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
