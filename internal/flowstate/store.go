@@ -55,6 +55,14 @@ func cloneStrings(values []string) []string {
 	return append([]string(nil), values...)
 }
 
+// CloneQueryRecord 返回一条查询记录的深拷贝，确保 Tags 切片不再与调用方共享底层数组。
+// 日志一旦交出（写入存储或返回给读取方）就必须固定，外部对原切片的任何复用或篡改
+// 都不应影响已落库或已读出的记录。
+func CloneQueryRecord(record QueryRecord) QueryRecord {
+	record.Tags = cloneStrings(record.Tags)
+	return record
+}
+
 func IsNilInterface(value any) bool {
 	if value == nil {
 		return true
@@ -137,14 +145,19 @@ func (s *Store) Counter(key string) int {
 func (s *Store) AppendLog(record QueryRecord) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.logs = append(s.logs, record)
+	// 深拷贝 Tags：记录一旦交给存储就固定，调用方后续复用或篡改底层数组不得影响已落库的日志。
+	s.logs = append(s.logs, CloneQueryRecord(record))
 }
 
 func (s *Store) Logs() []QueryRecord {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	result := make([]QueryRecord, len(s.logs))
-	copy(result, s.logs)
+	// 逐条深拷贝：copy 只做浅拷贝，Tags 切片头仍会指向存储记录的底层数组，
+	// 读取方改动返回值会污染下一次读取，因此必须单独克隆 Tags。
+	for i := range s.logs {
+		result[i] = CloneQueryRecord(s.logs[i])
+	}
 	return result
 }
 

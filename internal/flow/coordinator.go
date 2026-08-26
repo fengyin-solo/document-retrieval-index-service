@@ -239,7 +239,11 @@ func (c *Coordinator) RebuildTransactional(indexID string, build func() ([]strin
 }
 
 func (c *Coordinator) LogQuery(record flowstate.QueryRecord, dispatch func(func())) {
-	dispatch(func() { c.state.AppendLog(record) })
+	// 交出日志前先冻结 Tags 切片，避免后台真正执行 AppendLog 之前调用方复用底层数组
+	// （例如把标签改写成 "private"）导致最终落库的日志被污染。AppendLog 内部也会再拷贝，
+	// 这里提前拷贝是为了保证即便 dispatch 把任务推迟到后台，记录也已固定。
+	frozen := flowstate.CloneQueryRecord(record)
+	dispatch(func() { c.state.AppendLog(frozen) })
 }
 
 func (c *Coordinator) MergeSuggestions(ctx context.Context, providers []func(context.Context) ([]string, error)) ([]string, error) {
