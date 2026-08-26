@@ -66,7 +66,10 @@ func IsNilInterface(value any) bool {
 func (s *Store) PutSnapshot(key string, values []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.snapshots[key] = append(s.snapshots[key], values...)
+	// 快照表示某个 key 在某一时刻的完整值，写入应整体替换旧值，
+	// 而不是追加。否则同一 key 重复写入会把新词接在旧词后面，并导致
+	// 重建索引时文档数等计数被重复累加。
+	s.snapshots[key] = cloneStrings(values)
 }
 
 func (s *Store) Snapshot(key string) []string {

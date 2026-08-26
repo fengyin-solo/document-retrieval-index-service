@@ -192,8 +192,13 @@ func (c *Coordinator) RecordHot(term string) int {
 
 func (c *Coordinator) ReplaceDocument(indexID, docID string, terms []string) {
 	key := "document:" + indexID + ":" + docID
+	// 仅在该文档尚未存在时才增加文档计数，避免同一篇文档重复建索引时
+	// 文档数从 1 变成 2（替换语义：新内容覆盖旧内容，计数不能重复累加）。
+	newDoc := !c.state.HasSnapshot(key)
 	c.state.PutSnapshot(key, terms)
-	c.state.AddCounter("documents:"+indexID, 1)
+	if newDoc {
+		c.state.AddCounter("documents:"+indexID, 1)
+	}
 }
 
 func (c *Coordinator) DeleteDocument(indexID, docID string) []string {
