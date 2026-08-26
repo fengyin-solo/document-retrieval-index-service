@@ -362,13 +362,13 @@ func (c *Coordinator) RetryWrite(ctx context.Context, idempotencyKey string, att
 	if c.state.Seen(idempotencyKey) {
 		return nil
 	}
-	c.state.MarkSeen(idempotencyKey)
 	for attempt := 0; attempt < attempts; attempt++ {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
 		err := write(ctx)
 		if err == nil {
+			c.state.MarkSeen(idempotencyKey)
 			return nil
 		}
 		var temporary *TemporaryError

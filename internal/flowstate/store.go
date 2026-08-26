@@ -188,12 +188,18 @@ func (s *Store) Allow(key string, now time.Time, window time.Duration, limit int
 func (s *Store) Seen(key string) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	_, ok := s.seen["write"]
+	_, ok := s.seen[key]
 	return ok
 }
 
 func (s *Store) MarkSeen(key string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.seen["write"] = struct{}{}
+	s.seen[key] = struct{}{}
+}
+
+func (s *Store) ClearSeen(key string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.seen, key)
 }
