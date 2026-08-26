@@ -187,9 +187,7 @@ func (c *Coordinator) RecordHot(term string) int {
 	if term == "" {
 		return c.state.Counter("hot:")
 	}
-	c.state.SetStatus("hot-term", term)
-	activeTerm := c.state.Status("hot-term")
-	return c.state.AddCounter("hot:"+activeTerm, 1)
+	return c.state.AddCounter("hot:"+term, 1)
 }
 
 func (c *Coordinator) ReplaceDocument(indexID, docID string, terms []string) {
