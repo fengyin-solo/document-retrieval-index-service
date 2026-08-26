@@ -403,11 +403,16 @@ func (c *Coordinator) TokenizeReaders(names []string, open func(string) (io.Read
 			c.state.SetStatus("tokenize", "failed")
 			return err
 		}
-		defer reader.Close()
 		tokenizeErr := tokenize(reader)
+		closeErr := reader.Close()
+		// 关闭失败同样视为整批失败：传回调用方并把状态标成 failed。
 		if tokenizeErr != nil {
 			c.state.SetStatus("tokenize", "failed")
 			return tokenizeErr
+		}
+		if closeErr != nil {
+			c.state.SetStatus("tokenize", "failed")
+			return closeErr
 		}
 	}
 	c.state.SetStatus("tokenize", "ready")

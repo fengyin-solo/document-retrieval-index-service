@@ -112,9 +112,6 @@ func (s *Store) Generation(key string) Versioned {
 func (s *Store) SetStatus(key, status string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if _, exists := s.statuses[key]; exists {
-		return
-	}
 	s.statuses[key] = status
 }
 
