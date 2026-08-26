@@ -324,7 +324,12 @@ func (c *Coordinator) QueryShards(ctx context.Context, shards []string, fetch fu
 }
 
 func (c *Coordinator) ReloadAnalyzer(name string, generation int, stopwords []string) bool {
-	return c.state.CommitGeneration("analyzer", generation, stopwords)
+	return c.state.CommitGeneration("analyzer:"+name, generation, stopwords)
+}
+
+// AnalyzerVersion 返回指定分词器的当前版本与内容。各分词器的版本互相独立。
+func (c *Coordinator) AnalyzerVersion(name string) flowstate.Versioned {
+	return c.state.Generation("analyzer:" + name)
 }
 
 func (c *Coordinator) BoostSnapshot(indexID string, rules []string) []string {

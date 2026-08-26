@@ -2,7 +2,6 @@ package flowstate
 
 import (
 	"reflect"
-	"strings"
 	"sync"
 	"time"
 )
@@ -94,7 +93,6 @@ func (s *Store) DeleteSnapshot(key string) []string {
 func (s *Store) CommitGeneration(key string, generation int, values []string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	key = strings.SplitN(key, ":", 2)[0]
 	current := s.versions[key]
 	if generation <= current.Generation {
 		return false
