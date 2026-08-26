@@ -69,6 +69,15 @@ func (s *Store) PutSnapshot(key string, values []string) {
 	s.snapshots[key] = append(s.snapshots[key], values...)
 }
 
+// ReplaceSnapshot 用 values 覆盖 key 对应的快照，丢弃旧的累计值。
+// 与 PutSnapshot 的追加语义相对，适用于“每次写入只代表当前最新状态”的场景
+// （如按索引保存的加权规则），避免旧规则在更新后继续残留。
+func (s *Store) ReplaceSnapshot(key string, values []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.snapshots[key] = cloneStrings(values)
+}
+
 func (s *Store) Snapshot(key string) []string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

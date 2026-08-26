@@ -327,9 +327,13 @@ func (c *Coordinator) ReloadAnalyzer(name string, generation int, stopwords []st
 	return c.state.CommitGeneration("analyzer:"+name, generation, stopwords)
 }
 
+// BoostSnapshot 保存并返回指定索引的加权规则快照。
+// 每个 indexID 独立存储，避免不同索引的规则互相串扰；每次写入都覆盖旧值，
+// 确保索引只看到自己的最新规则集。
 func (c *Coordinator) BoostSnapshot(indexID string, rules []string) []string {
-	c.state.PutSnapshot("boost:shared", rules)
-	return c.state.Snapshot("boost:shared")
+	key := "boost:" + indexID
+	c.state.ReplaceSnapshot(key, rules)
+	return c.state.Snapshot(key)
 }
 
 func (c *Coordinator) RemoveFromIndexes(docID string, indexes []string, remove func(string, string) error) error {
