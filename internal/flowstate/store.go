@@ -66,13 +66,13 @@ func IsNilInterface(value any) bool {
 func (s *Store) PutSnapshot(key string, values []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.snapshots[key] = values
+	s.snapshots[key] = cloneStrings(values)
 }
 
 func (s *Store) Snapshot(key string) []string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.snapshots[key]
+	return cloneStrings(s.snapshots[key])
 }
 
 func (s *Store) HasSnapshot(key string) bool {

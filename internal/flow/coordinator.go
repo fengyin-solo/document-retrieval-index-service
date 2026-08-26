@@ -210,8 +210,7 @@ func (c *Coordinator) DeleteDocument(indexID, docID string) []string {
 }
 
 func (c *Coordinator) StoreSynonyms(term string, synonyms []string) []string {
-	shared := synonyms
-	c.state.PutSnapshot("synonyms:"+term, shared)
+	c.state.PutSnapshot("synonyms:"+term, synonyms)
 	return c.state.Snapshot("synonyms:" + term)
 }
 
