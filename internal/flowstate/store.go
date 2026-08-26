@@ -118,6 +118,14 @@ func (s *Store) SetStatus(key, status string) {
 	s.statuses[key] = status
 }
 
+// UpdateStatus 强制覆盖状态，用于需要从中间态流转到终态的场景
+// （例如重建 running→failed/ready），SetStatus 只能写入一次无法完成这种流转。
+func (s *Store) UpdateStatus(key, status string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.statuses[key] = status
+}
+
 func (s *Store) Status(key string) string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

@@ -227,16 +227,19 @@ func (c *Coordinator) CorrectCached(ctx context.Context, word string, ttl time.D
 	return value, nil
 }
 
+// RebuildTransactional 重建索引。为保证失败时仍可使用旧数据，
+// 旧快照在 build 成功前不会被清空，仅状态置为 running；build 成功后才
+// 提交新快照并置为 ready，失败时保留旧快照并强制置为 failed。
 func (c *Coordinator) RebuildTransactional(indexID string, build func() ([]string, error)) error {
-	c.state.SetStatus("rebuild:"+indexID, "running")
-	c.state.PutSnapshot("rebuild:"+indexID, nil)
+	c.state.UpdateStatus("rebuild:"+indexID, "running")
 	values, err := build()
 	if err != nil {
-		c.state.SetStatus("rebuild:"+indexID, "failed")
+		// 数据源报错：旧快照保留不动，仅把状态强制标成失败。
+		c.state.UpdateStatus("rebuild:"+indexID, "failed")
 		return err
 	}
 	c.state.PutSnapshot("rebuild:"+indexID, values)
-	c.state.SetStatus("rebuild:"+indexID, "ready")
+	c.state.UpdateStatus("rebuild:"+indexID, "ready")
 	return nil
 }
 
