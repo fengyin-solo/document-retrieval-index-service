@@ -361,9 +361,6 @@ func (c *Coordinator) FacetSnapshot(documents map[string]string) map[string]int 
 	}
 	sort.Strings(categories)
 	c.state.PutSnapshot("facets", categories)
-	for index := range categories {
-		categories[index] = ""
-	}
 	return counts
 }
 
