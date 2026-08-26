@@ -169,11 +169,13 @@ func (s *Store) CacheGet(key string, now time.Time) (string, bool) {
 	return entry.value, true
 }
 
+// Allow 判断在 window 时间窗口内 key 是否仍可访问。
+// 窗口采用固定重置策略：超过 window 时长后计数归零，开始新的窗口。
 func (s *Store) Allow(key string, now time.Time, window time.Duration, limit int) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	bucket := s.buckets[key]
-	if bucket.window.IsZero() {
+	if bucket.window.IsZero() || now.Sub(bucket.window) >= window {
 		bucket = rateBucket{window: now}
 	}
 	if bucket.count >= limit {

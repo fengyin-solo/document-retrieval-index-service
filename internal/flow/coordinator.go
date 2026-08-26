@@ -284,7 +284,7 @@ func (c *Coordinator) MergeSuggestions(ctx context.Context, providers []func(con
 }
 
 func (c *Coordinator) AllowRequest(key string, now time.Time, window time.Duration, limit int) bool {
-	return c.state.Allow("rate:shared", now, window, limit)
+	return c.state.Allow("rate:"+key, now, window, limit)
 }
 
 func (c *Coordinator) WaitForWorkers(ctx context.Context, workers *sync.WaitGroup) error {
