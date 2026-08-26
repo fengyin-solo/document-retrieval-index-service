@@ -384,8 +384,10 @@ func (c *Coordinator) RecoverSearch(search func(*[]string)) (results []string, e
 	c.state.SetStatus("search", "searching")
 	defer func() {
 		if recovered := recover(); recovered != nil {
-			results = append([]string(nil), working...)
-			c.state.PutSnapshot("search", results)
+			// 失败的搜索不得把半截命中当作结果返回或写入缓存。
+			// working 在恢复点即被丢弃，不复制进 results，也不入快照。
+			results = nil
+			c.state.DeleteSnapshot("search")
 			c.state.SetStatus("search", "failed")
 			err = fmt.Errorf("search panic: %v", recovered)
 		}
