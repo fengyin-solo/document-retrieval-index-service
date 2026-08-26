@@ -82,11 +82,18 @@ func (s *Store) HasSnapshot(key string) bool {
 	return ok
 }
 
-func (s *Store) DeleteSnapshot(key string) []string {
+// DeleteSnapshot 删除指定快照，返回被删除的旧值以及该键是否曾存在。
+// 键不存在时不产生任何副作用，保证重复删除幂等。
+func (s *Store) DeleteSnapshot(key string) ([]string, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	_, ok := s.snapshots[key]
+	if !ok {
+		return nil, false
+	}
 	old := cloneStrings(s.snapshots[key])
-	return old
+	delete(s.snapshots, key)
+	return old, true
 }
 
 func (s *Store) CommitGeneration(key string, generation int, values []string) bool {

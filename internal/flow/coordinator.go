@@ -201,8 +201,10 @@ func (c *Coordinator) ReplaceDocument(indexID, docID string, terms []string) {
 
 func (c *Coordinator) DeleteDocument(indexID, docID string) []string {
 	key := "document:" + indexID + ":" + docID
-	old := c.state.DeleteSnapshot(key)
-	c.state.AddCounter("documents:"+indexID, -1)
+	old, ok := c.state.DeleteSnapshot(key)
+	if ok {
+		c.state.AddCounter("documents:"+indexID, -1)
+	}
 	return old
 }
 
