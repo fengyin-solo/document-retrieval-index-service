@@ -337,7 +337,8 @@ func (c *Coordinator) RemoveFromIndexes(docID string, indexes []string, remove f
 	c.state.SetStatus("remove:"+docID, "removing")
 	for _, indexID := range indexes {
 		if err := remove(indexID, docID); err != nil {
-			c.state.PutSnapshot("removed:"+docID, removed)
+			// 整组失败时不要用部分进度覆盖上一检查点，保留原 removed 快照，
+			// 仅把状态标成 failed，便于排查与重试。
 			c.state.SetStatus("remove:"+docID, "failed")
 			return err
 		}
