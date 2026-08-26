@@ -63,10 +63,13 @@ func IsNilInterface(value any) bool {
 	return v.Kind() == reflect.Ptr && v.IsNil()
 }
 
+// PutSnapshot 用 values 覆盖 key 对应的快照。每次写入代表该 key 当前
+// 最新的一批命中（或当前状态），旧值被整体替换，而非累加，避免多次
+// 写入同 key 时旧命中残留并与新命中混在一起。
 func (s *Store) PutSnapshot(key string, values []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.snapshots[key] = append(s.snapshots[key], values...)
+	s.snapshots[key] = cloneStrings(values)
 }
 
 func (s *Store) Snapshot(key string) []string {

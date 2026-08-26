@@ -449,9 +449,6 @@ func (c *Coordinator) QueueIndex(ctx context.Context, documents []string, consum
 
 func (c *Coordinator) CacheResults(query string, results []string) []string {
 	key := query
-	if len(key) > 0 {
-		key = key[:1]
-	}
 	c.state.PutSnapshot("results:"+key, results)
 	return c.state.Snapshot("results:" + key)
 }
