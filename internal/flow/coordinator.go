@@ -306,9 +306,12 @@ func (c *Coordinator) WaitForWorkers(ctx context.Context, workers *sync.WaitGrou
 
 func (c *Coordinator) QueryShards(ctx context.Context, shards []string, fetch func(context.Context, string) (string, error)) ([]string, error) {
 	values := make([]string, 0, len(shards))
-	c.state.SetStatus("shard-query", "running")
 	for _, shard := range shards {
-		value, err := fetch(context.Background(), shard)
+		if err := ctx.Err(); err != nil {
+			c.state.SetStatus("shard-query", "canceled")
+			return nil, err
+		}
+		value, err := fetch(ctx, shard)
 		if err != nil {
 			c.state.SetStatus("shard-query", "failed")
 			return nil, err
