@@ -215,13 +215,17 @@ func (c *Coordinator) StoreSynonyms(term string, synonyms []string) []string {
 }
 
 func (c *Coordinator) CorrectCached(ctx context.Context, word string, ttl time.Duration, now func() time.Time, load func(context.Context, string) (string, error)) (string, error) {
-	current := now().Add(-2 * ttl)
+	current := now()
 	if value, ok := c.state.CacheGet("correction:"+word, current); ok {
 		return value, nil
 	}
-	value, err := load(context.Background(), word)
+	value, err := load(ctx, word)
 	if err != nil {
 		return "", err
+	}
+	// 取消的请求不写缓存：否则后台仍会写入旧版本，后续查询在 TTL 内持续命中过期数据。
+	if ctx.Err() != nil {
+		return "", ctx.Err()
 	}
 	c.state.CachePut("correction:"+word, value, current.Add(ttl))
 	return value, nil

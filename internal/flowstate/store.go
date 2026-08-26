@@ -163,6 +163,10 @@ func (s *Store) CacheGet(key string, now time.Time) (string, bool) {
 	defer s.mu.Unlock()
 	entry, ok := s.cache[key]
 	if !ok {
+		return "", false
+	}
+	// 过期即视作未命中，并清理掉脏条目，避免后续查询继续拿到旧版本。
+	if !now.Before(entry.expiresAt) {
 		delete(s.cache, key)
 		return "", false
 	}
